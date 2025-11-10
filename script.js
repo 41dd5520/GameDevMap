@@ -3,7 +3,7 @@ let markers = [];
 let clubsData = [];
 let currentProvinceFilter = null; // 当前选中的省份过滤器
 
-const AMAP_KEY = '5cb8fcdd6990f463d15a601676fdb6d5';
+const AMAP_KEY = '62f275dfc2b00c300c0ea9842ed315ca';
 
 // 初始化地图
 function initMap() {
