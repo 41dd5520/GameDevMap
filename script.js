@@ -10,10 +10,10 @@ function initMap() {
     map = L.map('map').setView([35.8617, 104.1954], 5);
     
     // 添加地图瓦片层
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 18
-    }).addTo(map);
+    // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    //   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    //    maxZoom: 18
+    // }).addTo(map);
     
     // 初始化标记聚合组 
     markerClusterGroup = L.markerClusterGroup({
