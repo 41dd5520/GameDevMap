@@ -27,6 +27,6 @@ Thumbs.db
 .env.production.local
 
 # Project specific ignores
-.github/
+.github/prompts/
 .specify/
 specs/
