@@ -1,6 +1,7 @@
 # 全国高校游戏开发社团地图
 
 一个用于展示和链接全国高校游戏开发社团的互动地图网站。
+目前部署于 Github Page：https://cutrelyalex.github.io/GameDevMap/
 
 ## 快速开始
 
