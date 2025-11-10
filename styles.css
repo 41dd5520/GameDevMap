@@ -444,11 +444,3 @@ body {
 .leaflet-control-attribution {
     display: none !important;
 }
-
-/* 地图上社团Logo的半透明白色背景 */
-.leaflet-marker-icon {
-    background-color: rgba(255, 255, 255, 0.4) !important;
-    border-radius: 4px;
-    padding: 2px;
-    box-sizing: border-box;
-}

@@ -4,22 +4,15 @@ let clubsData = [];
 let markerClusterGroup;
 let currentProvinceFilter = null; // 当前选中的省份过滤器
 
-const TIANDITU_KEY = 'b71fab54427d58dbfa7204ec6951f591'; // 天地图 Key
-
 // 初始化地图
 function initMap() {
     // 创建地图，默认聚焦中国
     map = L.map('map').setView([35.8617, 104.1954], 5);
     
-    L.tileLayer(`http://{s}.tianditu.gov.cn/vec_w/wmts?tk=${TIANDITU_KEY}`, {
-        subdomains: ['t0', 't1', 't2', 't3', 't4', 't5', 't6', 't7'],
-        attribution: '天地图 - 矢量地图'
-    }).addTo(map);
-
-    L.tileLayer(`http://{s}.tianditu.gov.cn/cva_w/wmtstk=${TIANDITU_KEY}`, {
-        subdomains: ['t0', 't1', 't2', 't3', 't4', 't5', 't6', 't7'],
-        attribution: '天地图 - 矢量注记'
-    }).addTo(map);
+    // 添加地图瓦片层(暂时用卫星图)
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri'
+}).addTo(map);
     
     // 初始化标记聚合组 
     markerClusterGroup = L.markerClusterGroup({
@@ -70,9 +63,9 @@ function displayMarkers(provinceFilter = null) {
             const logoUrl = club.logo_url || 'assets/logos/placeholder.png';
             const icon = L.icon({
                 iconUrl: logoUrl,
-                iconSize: [80, 80],     
-                iconAnchor: [40, 80],    // 调整锚点位置（图标中心底部）
-                popupAnchor: [0, -80],   // 调整弹出框位置
+                iconSize: [60, 60],     
+                iconAnchor: [30, 60],    // 调整锚点位置（图标中心底部）
+                popupAnchor: [0, -60],   // 调整弹出框位置
                 loading: 'lazy'
             });
             
@@ -376,7 +369,7 @@ function showProvinceClubs(province) {
     if (filteredClubs.length === 0) {
         detailsDiv.innerHTML = '';
         const p = document.createElement('p');
-        p.textContent = '此分类暂无社团数据';
+        p.textContent = '该省份暂无社团数据';
         detailsDiv.appendChild(p);
         return;
     }
