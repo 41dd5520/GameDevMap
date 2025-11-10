@@ -9,18 +9,16 @@ const TIANDITU_KEY = 'b71fab54427d58dbfa7204ec6951f591'; // 天地图 Key
 // 初始化地图
 function initMap() {
     // 创建地图，默认聚焦中国
-    map = L.map('map', {
-        crs: L.CRS.EPSG4326
-    }).setView([35.8617, 104.1954], 5);
+    map = L.map('map').setView([35.8617, 104.1954], 5);
 
-    // 添加天地图矢量底图 (经纬度投影)
-    L.tileLayer(`https://t0.tianditu.gov.cn/vec_c/wmts?tk=${TIANDITU_KEY}&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=vec&STYLE=default&TILEMATRIXSET=c&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}`, {
+    // 添加天地图矢量底图
+    L.tileLayer(`https://t0.tianditu.gov.cn/vec_w/wmts?tk=${TIANDITU_KEY}&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=vec&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}`, {
         subdomains: ['t0', 't1', 't2', 't3', 't4', 't5', 't6', 't7'],
         attribution: '天地图 - 矢量地图'
     }).addTo(map);
 
-    // 添加天地图矢量注记 (经纬度投影)
-    L.tileLayer(`https://t0.tianditu.gov.cn/cva_c/wmts?tk=${TIANDITU_KEY}&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cva&STYLE=default&TILEMATRIXSET=c&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}`, {
+    // 添加天地图矢量注记
+    L.tileLayer(`https://t0.tianditu.gov.cn/cva_w/wmts?tk=${TIANDITU_KEY}&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cva&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}`, {
         subdomains: ['t0', 't1', 't2', 't3', 't4', 't5', 't6', 't7'],
         attribution: '天地图 - 矢量注记'
     }).addTo(map);

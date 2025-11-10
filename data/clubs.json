@@ -62,7 +62,7 @@
     "province": "吉林省",
     "latitude": 43.83093,
     "longitude": 125.31427,
-    "logo_url": "assets/logos/cust-YOUGAP.png",
+    "logo_url": "assets/logos/cust-yougap.png",
     "short_description": "拾起那份藏在缝隙中的，对游戏的热爱",
     "long_description": "坐落于吉林省长春市的神秘游戏开发社团\n主要以策划、程序、美术、独游制作人四个方向进行培养分流\n使用Unreal/Unity/Godot等游戏引擎，不限特定引擎\n不定期参加Gamejam/游戏沙龙/技术分享等活动\n支持社团成员跨校合作，开展长期项目等\n游隙拾光工作室正式成立于2025年，前身为长春理工大学游戏开发创作联盟（2022年）",
     "external_links": [
@@ -91,7 +91,7 @@
       }
     ],
     "tags": ["正式社团","游戏开发","技术","Unity", "Godot","Gamejam","闲聊"]
-  }
+  },
   {
     "id": "siulight",
     "name": "微光漫摄协会游戏部",
@@ -110,5 +110,6 @@
       }
     ],
     "tags": ["正式社团","动画","二创","游戏开发","爱好","Unity","Game派对","闲聊"]
-  }
+  },
+  
 ]
