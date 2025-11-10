@@ -12,7 +12,7 @@ const CACHE_DIR = path.join(__dirname, '..', 'map-cache');
 const PERMANENT_CACHE_DIR = path.join(CACHE_DIR, 'permanent');
 const TEMP_CACHE_DIR = path.join(CACHE_DIR, 'temp');
 const TEMP_CACHE_MAX_AGE = parseInt(process.env.CACHE_MAX_AGE) || 7 * 24 * 60 * 60 * 1000;
-const AMAP_KEY = process.env.AMAP_KEY || '5cb8fcdd6990f463d15a601676fdb6d5';
+const AMAP_KEY = process.env.AMAP_KEY;
 
 // 初始化缓存目录
 [CACHE_DIR, PERMANENT_CACHE_DIR, TEMP_CACHE_DIR].forEach(dir => {
