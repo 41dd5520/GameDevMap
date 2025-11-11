@@ -1,0 +1,33 @@
+{
+  "timestamp": "2025-11-11T15:21:31.028Z",
+  "ipAddress": "183.36.189.205",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+  "duplicateCheck": {
+    "passed": true,
+    "similarClubs": [],
+    "totalFound": 0
+  },
+  "submission": {
+    "submitterEmail": "2470819243@qq.com",
+    "data": {
+      "name": "Test",
+      "school": "Test",
+      "province": "北京市",
+      "city": "深圳市",
+      "coordinates": {
+        "latitude": 22.7044,
+        "longitude": 114.3
+      },
+      "short_description": "test1234",
+      "long_description": "TEST12345",
+      "tags": [
+        "非正式社团",
+        "Unity"
+      ],
+      "external_links": [],
+      "submitterEmail": "2470819243@qq.com",
+      "logo": "/assets/submissions/20251111_k0t5ej01_Z_S_0OWQ_QS2SIU0_G_QFQ.JPG"
+    },
+    "logo": "/assets/submissions/20251111_k0t5ej01_Z_S_0OWQ_QS2SIU0_G_QFQ.JPG"
+  }
+}

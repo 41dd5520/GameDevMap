@@ -1,0 +1,41 @@
+{
+  "timestamp": "2025-11-11T15:34:33.094Z",
+  "ipAddress": "117.178.10.233",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+  "duplicateCheck": {
+    "passed": true,
+    "similarClubs": [],
+    "error": "Client must be connected before running operations"
+  },
+  "submission": {
+    "submitterEmail": "1715610143@qq.com",
+    "data": {
+      "name": "逻辑机械游创社",
+      "school": "赣南师范大学科技学院",
+      "province": "江西省",
+      "city": "赣州市",
+      "coordinates": {
+        "latitude": 25.849374,
+        "longitude": 114.931543
+      },
+      "short_description": "一个专注于游戏领域，面向广大游戏开发者和爱好者的社团组织",
+      "long_description": "不定期的桌游活动/GameJam带队\n社团公开课等文件请见飞书\n2025年新起社团，欢迎各位老资历支持\n共建美好开发环境！",
+      "tags": [
+        "游戏开发",
+        "竞赛",
+        "程序",
+        "美术",
+        "策划"
+      ],
+      "external_links": [
+        {
+          "type": "飞书",
+          "url": "https://icnxn3e8k996.feishu.cn/wiki/LuIewhxV7iNYspkhgb9cCM5vnIg?from=from_copylink"
+        }
+      ],
+      "submitterEmail": "1715610143@qq.com",
+      "logo": "/assets/submissions/20251111_tmdlteti_LMC.png"
+    },
+    "logo": "/assets/submissions/20251111_tmdlteti_LMC.png"
+  }
+}

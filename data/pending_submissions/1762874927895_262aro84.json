@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-11-11T15:28:47.895Z",
+  "ipAddress": "183.36.189.205",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+  "duplicateCheck": {
+    "passed": true,
+    "similarClubs": [],
+    "totalFound": 0
+  },
+  "submission": {
+    "submitterEmail": "3@qq.com",
+    "data": {
+      "name": "123",
+      "school": "232",
+      "province": "山东省",
+      "city": "32",
+      "coordinates": {
+        "latitude": 12,
+        "longitude": 12
+      },
+      "short_description": "232",
+      "long_description": "23",
+      "tags": [
+        "32"
+      ],
+      "external_links": [],
+      "submitterEmail": "3@qq.com",
+      "logo": "/assets/submissions/20251111_g82fxhg3_test.png"
+    },
+    "logo": "/assets/submissions/20251111_g82fxhg3_test.png"
+  }
+}
