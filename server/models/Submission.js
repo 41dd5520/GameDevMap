@@ -1,6 +1,19 @@
 const mongoose = require('mongoose');
 
 const submissionSchema = new mongoose.Schema({
+  submissionType: {
+    type: String,
+    enum: ['new', 'edit'],
+    default: 'new',
+    required: true
+  },
+  editingClubId: {
+    type: String,
+    trim: true
+  },
+  originalData: {
+    type: mongoose.Schema.Types.Mixed
+  },
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],

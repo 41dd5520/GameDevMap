@@ -26,6 +26,17 @@ const longDescriptionInput = document.getElementById('longDescription');
 const linksContainer = document.getElementById('linksContainer');
 const addLinkBtn = document.getElementById('addLinkBtn');
 
+// Edit mode elements
+const modeRadios = document.querySelectorAll('input[name="submissionMode"]');
+const clubSearchSection = document.getElementById('clubSearchSection');
+const clubSearchInput = document.getElementById('clubSearchInput');
+const searchButton = document.getElementById('searchButton');
+const searchResults = document.getElementById('searchResults');
+const selectedClubInfo = document.getElementById('selectedClubInfo');
+
+let currentMode = 'new'; // 'new' or 'edit'
+let selectedClub = null;
+
 /**
  * Populate the province dropdown.
  */
@@ -246,6 +257,7 @@ form.addEventListener('submit', async (event) => {
     const links = collectLinks();
 
     const payload = {
+      submissionType: currentMode,
       name: document.getElementById('name').value.trim(),
       school: document.getElementById('school').value.trim(),
       province: provinceSelect.value,
@@ -260,6 +272,11 @@ form.addEventListener('submit', async (event) => {
       external_links: links,
       submitterEmail: document.getElementById('submitterEmail').value.trim()
     };
+
+    // Add editing club ID if in edit mode
+    if (currentMode === 'edit' && selectedClub) {
+      payload.editingClubId = selectedClub.id;
+    }
 
     const logoFile = logoInput.files?.[0];
     if (logoFile) {
@@ -305,10 +322,107 @@ const initialRemoveButtons = linksContainer.querySelectorAll('.remove-link-btn')
 initialRemoveButtons.forEach((btn) => {
   btn.addEventListener('click', (e) => {
     e.preventDefault();
-    btn.parentElement.remove();
-    updateRemoveButtonVisibility();
+    handleRemoveLinkClick(e);
   });
 });
+
+// Mode switching
+modeRadios.forEach(radio => {
+  radio.addEventListener('change', (e) => {
+    currentMode = e.target.value;
+    clubSearchSection.style.display = currentMode === 'edit' ? 'block' : 'none';
+    
+    if (currentMode === 'new') {
+      resetForm();
+      selectedClub = null;
+      selectedClubInfo.style.display = 'none';
+      searchResults.innerHTML = '';
+    }
+  });
+});
+
+// Club search
+searchButton.addEventListener('click', async () => {
+  const query = clubSearchInput.value.trim();
+  if (!query) {
+    showStatus('请输入搜索内容', 'error');
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/clubs?search=${encodeURIComponent(query)}`);
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error('搜索失败');
+    }
+
+    displaySearchResults(result.data || []);
+  } catch (error) {
+    showStatus('搜索失败，请稍后再试', 'error');
+  }
+});
+
+// Display search results
+function displaySearchResults(clubs) {
+  searchResults.innerHTML = '';
+  
+  if (clubs.length === 0) {
+    searchResults.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">未找到匹配的社团</p>';
+    return;
+  }
+
+  clubs.forEach(club => {
+    const item = document.createElement('div');
+    item.className = 'search-result-item';
+    item.innerHTML = `
+      <strong>${club.name}</strong>
+      <small>${club.school} - ${club.province}</small>
+    `;
+    item.addEventListener('click', () => selectClub(club));
+    searchResults.appendChild(item);
+  });
+}
+
+// Select a club for editing
+function selectClub(club) {
+  selectedClub = club;
+  
+  // Display selected club info
+  selectedClubInfo.style.display = 'block';
+  selectedClubInfo.innerHTML = `
+    <h4>✓ 已选择社团</h4>
+    <p><strong>社团名称：</strong>${club.name}</p>
+    <p><strong>所属学校：</strong>${club.school}</p>
+    <p><strong>省份：</strong>${club.province}</p>
+  `;
+
+  // Fill form with existing data
+  document.getElementById('name').value = club.name || '';
+  document.getElementById('school').value = club.school || '';
+  provinceSelect.value = club.province || '';
+  document.getElementById('city').value = club.city || '';
+  
+  if (club.coordinates && club.coordinates.length === 2) {
+    longitudeInput.value = club.coordinates[0];
+    latitudeInput.value = club.coordinates[1];
+  }
+  
+  shortDescriptionInput.value = club.shortDescription || '';
+  longDescriptionInput.value = club.description || '';
+  tagsInput.value = club.tags ? club.tags.join(', ') : '';
+  
+  // Website
+  if (club.website) {
+    document.getElementById('website').value = club.website;
+  }
+
+  // Clear search results
+  searchResults.innerHTML = '';
+  clubSearchInput.value = '';
+  
+  showStatus('社团信息已填入表单，您可以进行修改后提交', 'success');
+}
 
 // Initialize remove button visibility
 updateRemoveButtonVisibility();

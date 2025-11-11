@@ -83,7 +83,8 @@ router.post('/',
       }
 
       // 创建提交记录
-      const submission = new Submission({
+      const submissionData = {
+        submissionType: req.validatedData.submissionType || 'new',
         submitterEmail: req.validatedData.submitterEmail,
         data: {
           name: req.validatedData.name,
@@ -106,8 +107,25 @@ router.post('/',
             similarClubs: duplicateResult.similarClubs || []
           }
         }
-      });
+      };
 
+      // Add editing club ID and original data if in edit mode
+      if (req.validatedData.submissionType === 'edit' && req.validatedData.editingClubId) {
+        submissionData.editingClubId = req.validatedData.editingClubId;
+        
+        // Fetch original club data for comparison
+        try {
+          const Club = require('../models/Club');
+          const originalClub = await Club.findOne({ id: req.validatedData.editingClubId });
+          if (originalClub) {
+            submissionData.originalData = originalClub.toObject();
+          }
+        } catch (err) {
+          console.warn('Could not fetch original club data:', err);
+        }
+      }
+
+      const submission = new Submission(submissionData);
       await submission.save();
 
       res.status(201).json({

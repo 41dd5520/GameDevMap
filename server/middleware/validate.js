@@ -15,6 +15,24 @@ const PROVINCES = [
 
 // 提交数据验证 schema
 const submissionSchema = Joi.object({
+  submissionType: Joi.string()
+    .valid('new', 'edit')
+    .optional()
+    .default('new')
+    .messages({
+      'any.only': '提交类型必须是 new 或 edit'
+    }),
+
+  editingClubId: Joi.string()
+    .when('submissionType', {
+      is: 'edit',
+      then: Joi.required(),
+      otherwise: Joi.optional()
+    })
+    .messages({
+      'any.required': '编辑模式下必须提供社团 ID'
+    }),
+
   name: Joi.string()
     .min(2)
     .max(100)

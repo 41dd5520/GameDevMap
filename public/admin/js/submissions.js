@@ -353,7 +353,19 @@ function createCoordinateText(coordinates) {
 function renderDetail(submission) {
   currentSubmission = submission;
 
-  fillList(clubInfoList, [
+  // Determine if this is an edit submission
+  const isEdit = submission.submissionType === 'edit';
+  
+  // Basic club info
+  const clubInfo = [
+    ['提交类型', isEdit ? '<span style="color: #f39c12; font-weight: bold;">✏️ 编辑现有社团</span>' : '<span style="color: #27ae60; font-weight: bold;">➕ 新增社团</span>']
+  ];
+
+  if (isEdit && submission.editingClubId) {
+    clubInfo.push(['编辑社团 ID', submission.editingClubId]);
+  }
+
+  clubInfo.push(
     ['社团名称', submission.data?.name || '-'],
     ['所属学校', submission.data?.school || '-'],
     ['省份', submission.data?.province || '-'],
@@ -364,7 +376,9 @@ function renderDetail(submission) {
     ['长简介', submission.data?.description || '未提供'],
     ['Logo', submission.data?.logo || '未上传'],
     ['网站', submission.data?.website || '未提供']
-  ]);
+  );
+
+  fillList(clubInfoList, clubInfo);
 
   fillList(metaInfoList, [
     ['提交邮箱', submission.submitterEmail || '-'],
@@ -376,8 +390,80 @@ function renderDetail(submission) {
     ['客户端', submission.metadata?.userAgent || '未知']
   ]);
 
+  // Display comparison if edit mode
+  if (isEdit && submission.originalData) {
+    renderEditComparison(submission);
+  }
+
   renderDuplicateInfo(submission);
   buildApproveFooter(submission);
+}
+
+function renderEditComparison(submission) {
+  const original = submission.originalData;
+  const updated = submission.data;
+
+  const comparisonSection = document.createElement('div');
+  comparisonSection.style.marginTop = '20px';
+  comparisonSection.style.padding = '16px';
+  comparisonSection.style.background = '#fff3cd';
+  comparisonSection.style.border = '1px solid #ffc107';
+  comparisonSection.style.borderRadius = '6px';
+
+  const title = document.createElement('h3');
+  title.textContent = '📝 修改对比';
+  title.style.marginTop = '0';
+  title.style.color = '#856404';
+
+  const comparisonTable = document.createElement('table');
+  comparisonTable.style.width = '100%';
+  comparisonTable.style.borderCollapse = 'collapse';
+  comparisonTable.style.marginTop = '12px';
+
+  const fields = [
+    { key: 'name', label: '社团名称' },
+    { key: 'school', label: '所属学校' },
+    { key: 'province', label: '省份' },
+    { key: 'city', label: '城市' },
+    { key: 'shortDescription', label: '短简介' },
+    { key: 'description', label: '长简介' },
+    { key: 'tags', label: '标签' },
+    { key: 'logo', label: 'Logo' },
+    { key: 'website', label: '网站' }
+  ];
+
+  fields.forEach(field => {
+    const oldValue = field.key === 'tags' && Array.isArray(original[field.key])
+      ? original[field.key].join(', ')
+      : original[field.key] || '未提供';
+    
+    const newValue = field.key === 'tags' && Array.isArray(updated[field.key])
+      ? updated[field.key].join(', ')
+      : updated[field.key] || '未提供';
+
+    const hasChanged = oldValue !== newValue;
+
+    if (hasChanged) {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; width: 120px;">${field.label}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; background: #ffe6e6; text-decoration: line-through;">${oldValue}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; background: #e6ffe6; font-weight: bold;">${newValue}</td>
+      `;
+      comparisonTable.appendChild(row);
+    }
+  });
+
+  if (comparisonTable.children.length === 0) {
+    comparisonSection.innerHTML = '<p style="color: #856404; margin: 0;">未检测到字段变化</p>';
+  } else {
+    comparisonSection.appendChild(title);
+    comparisonSection.appendChild(comparisonTable);
+  }
+
+  // Insert comparison section before duplicate info
+  const parentSection = clubInfoList.closest('.detail-section');
+  parentSection.insertAdjacentElement('afterend', comparisonSection);
 }
 
 async function openModal(id) {

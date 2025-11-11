@@ -6,18 +6,37 @@ const Club = require('../models/Club');
  * GET /api/clubs
  * 公开端点 - 获取所有已批准的社团
  * 用于前端地图显示
+ * 支持搜索功能
  * 
+ * @query {string} search - 搜索关键词（可选）
  * @returns {Array} clubs - 社团列表
  */
 router.get('/', async (req, res) => {
   try {
-    const clubs = await Club.find({})
+    const { search } = req.query;
+    let query = {};
+
+    // 如果有搜索参数，添加搜索条件
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      query = {
+        $or: [
+          { name: searchRegex },
+          { school: searchRegex },
+          { province: searchRegex },
+          { city: searchRegex }
+        ]
+      };
+    }
+
+    const clubs = await Club.find(query)
       .select('-__v -sourceSubmission -verifiedBy')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .limit(search ? 20 : undefined); // 搜索时限制结果数量
 
     // 转换为前端期望的格式
     const formattedClubs = clubs.map(club => ({
-      id: club._id.toString(),
+      id: club.id || club._id.toString(),
       name: club.name,
       school: club.school,
       city: club.city || '',
@@ -29,7 +48,10 @@ router.get('/', async (req, res) => {
       long_description: club.description || '',
       tags: club.tags || [],
       website: club.website || '',
-      contact: club.contact || {}
+      contact: club.contact || {},
+      shortDescription: club.shortDescription || '',
+      description: club.description || '',
+      coordinates: club.coordinates
     }));
 
     return res.status(200).json({
