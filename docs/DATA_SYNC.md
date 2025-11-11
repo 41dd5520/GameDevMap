@@ -56,15 +56,92 @@ npm run migrate:clubs
 
 ### MongoDB → JSON (导出)
 ```bash
+# 完全替换模式（默认）- 用数据库内容完全覆盖 JSON
 npm run sync:json
+
+# 智能合并模式 - 保留 JSON 中的手动修改，更新数据库中存在的记录
+npm run sync:merge
+
+# 仅更新模式 - 只更新 JSON 中已存在的记录，不添加新记录
+npm run sync:update
+
+# 仅添加模式 - 只添加 JSON 中不存在的新记录，不修改现有记录
+npm run sync:addOnly
 ```
 
 **用途**:
-- 手动更新静态文件
-- 创建数据备份
-- 生成开源数据包
+- `sync:json` (replace): 完全同步，生产环境部署时的标准操作
+- `sync:merge`: 智能合并，开发环境保留手动修改
+- `sync:update`: 仅更新现有记录，数据刷新场景
+- `sync:addOnly`: 仅添加新记录，增量更新场景
 
 **脚本**: `server/scripts/syncToJson.js`
+
+## 同步模式详解
+
+### 完全替换模式 (replace)
+**命令**: `npm run sync:json` 或 `node server/scripts/syncToJson.js replace`
+
+**行为**:
+- 用数据库中的所有社团完全覆盖 `clubs.json`
+- 删除 JSON 中存在但数据库中不存在的社团
+- 添加数据库中存在但 JSON 中不存在的社团
+- 更新所有字段为数据库最新值
+
+**适用场景**:
+- 生产环境部署
+- 确保数据完全一致
+- 初始化或重置静态文件
+
+**统计输出**: 显示添加、更新、删除的数量
+
+### 智能合并模式 (merge)
+**命令**: `npm run sync:merge` 或 `node server/scripts/syncToJson.js merge`
+
+**行为**:
+- 保留 JSON 中可能的手动修改字段
+- 更新数据库中存在的记录的标准字段
+- 添加数据库中存在但 JSON 中不存在的新社团
+- 标记数据库中已删除但 JSON 中仍存在的社团
+
+**适用场景**:
+- 开发环境保留手动调整
+- 社区贡献的数据合并
+- 渐进式数据更新
+
+**统计输出**: 显示添加、更新、删除、未更改的数量
+
+### 仅更新模式 (update)
+**命令**: `npm run sync:update` 或 `node server/scripts/syncToJson.js update`
+
+**行为**:
+- 只更新 JSON 中已存在的记录
+- 不添加新的社团
+- 不删除 JSON 中存在的社团
+- 适用于数据刷新而不改变集合范围
+
+**适用场景**:
+- 现有社团信息更新
+- 数据质量改进
+- 避免意外添加或删除
+
+**统计输出**: 显示更新和未更改的数量
+
+### 仅添加模式 (addOnly)
+**命令**: `npm run sync:addOnly` 或 `node server/scripts/syncToJson.js addOnly`
+
+**行为**:
+- 只添加 JSON 中不存在的新社团
+- 不修改任何现有记录
+- 不删除任何记录
+- 完全保留现有数据
+
+**适用场景**:
+- 增量数据导入
+- 新社团批量添加
+- 安全的数据扩展
+
+**统计输出**: 显示添加数量和未更改的现有记录数
 
 ## 开源贡献工作流
 

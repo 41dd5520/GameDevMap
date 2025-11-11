@@ -9,66 +9,292 @@ const Club = require('../models/Club');
  * Sync Script: MongoDB -> clubs.json
  * 
  * 从 MongoDB 导出所有社团到 public/data/clubs.json
- * 用于保持静态 JSON 文件与数据库同步（开源项目需求）
+ * 支持多种同步模式以适配不同的使用场景
+ * 
+ * 同步模式：
+ * - replace: 完全替换（默认）- 用数据库内容完全覆盖 JSON
+ * - merge: 智能合并 - 保留 JSON 中的手动修改，更新数据库中存在的记录
+ * - update: 仅更新 - 只更新 JSON 中已存在的记录，不添加新记录
+ * - addOnly: 仅添加 - 只添加 JSON 中不存在的新记录
  */
 
-async function syncToJson() {
+/**
+ * 转换 Club 对象为 JSON 格式
+ */
+function formatClubForJson(club) {
+  return {
+    id: club._id.toString(),
+    name: club.name,
+    school: club.school,
+    city: club.city || '',
+    province: club.province,
+    latitude: club.coordinates[1],
+    longitude: club.coordinates[0],
+    img_name: club.logo || '',
+    short_description: club.shortDescription || '',
+    long_description: club.description || '',
+    tags: club.tags || [],
+    website: club.website || '',
+    contact: club.contact || {}
+  };
+}
+
+/**
+ * 完全替换模式（默认）
+ */
+async function syncReplace(clubs, clubsJsonPath) {
+  const formattedClubs = clubs.map(formatClubForJson);
+  
+  await fs.writeFile(
+    clubsJsonPath,
+    JSON.stringify(formattedClubs, null, 2),
+    'utf8'
+  );
+
+  return {
+    mode: 'replace',
+    total: formattedClubs.length,
+    added: formattedClubs.length,
+    updated: 0,
+    removed: 0,
+    unchanged: 0
+  };
+}
+
+/**
+ * 智能合并模式
+ */
+async function syncMerge(clubs, clubsJsonPath) {
+  let existingClubs = [];
+  
   try {
-    // 检查数据库连接状态（不主动连接）
+    const data = await fs.readFile(clubsJsonPath, 'utf8');
+    existingClubs = JSON.parse(data);
+  } catch (error) {
+    console.log('ℹ️  No existing clubs.json, will create new');
+  }
+
+  const existingMap = new Map();
+  existingClubs.forEach(club => {
+    existingMap.set(club.id, club);
+  });
+
+  const dbMap = new Map();
+  clubs.forEach(club => {
+    const id = club._id.toString();
+    dbMap.set(id, club);
+  });
+
+  const result = [];
+  let added = 0;
+  let updated = 0;
+  let unchanged = 0;
+  let removed = 0;
+
+  for (const club of clubs) {
+    const id = club._id.toString();
+    const formattedClub = formatClubForJson(club);
+    
+    if (existingMap.has(id)) {
+      const existing = existingMap.get(id);
+      const merged = {
+        ...existing,
+        ...formattedClub
+      };
+      
+      if (JSON.stringify(existing) !== JSON.stringify(merged)) {
+        updated++;
+      } else {
+        unchanged++;
+      }
+      
+      result.push(merged);
+    } else {
+      result.push(formattedClub);
+      added++;
+    }
+  }
+
+  for (const existing of existingClubs) {
+    if (!dbMap.has(existing.id)) {
+      removed++;
+    }
+  }
+
+  await fs.writeFile(
+    clubsJsonPath,
+    JSON.stringify(result, null, 2),
+    'utf8'
+  );
+
+  return {
+    mode: 'merge',
+    total: result.length,
+    added,
+    updated,
+    removed,
+    unchanged
+  };
+}
+
+/**
+ * 仅更新模式
+ */
+async function syncUpdate(clubs, clubsJsonPath) {
+  let existingClubs = [];
+  
+  try {
+    const data = await fs.readFile(clubsJsonPath, 'utf8');
+    existingClubs = JSON.parse(data);
+  } catch (error) {
+    throw new Error('clubs.json not found. Use "replace" or "merge" mode first.');
+  }
+
+  const dbMap = new Map();
+  clubs.forEach(club => {
+    const id = club._id.toString();
+    dbMap.set(id, club);
+  });
+
+  const result = [];
+  let updated = 0;
+  let unchanged = 0;
+
+  for (const existing of existingClubs) {
+    if (dbMap.has(existing.id)) {
+      const dbClub = dbMap.get(existing.id);
+      const formattedClub = formatClubForJson(dbClub);
+      
+      if (JSON.stringify(existing) !== JSON.stringify(formattedClub)) {
+        result.push(formattedClub);
+        updated++;
+      } else {
+        result.push(existing);
+        unchanged++;
+      }
+    } else {
+      result.push(existing);
+      unchanged++;
+    }
+  }
+
+  await fs.writeFile(
+    clubsJsonPath,
+    JSON.stringify(result, null, 2),
+    'utf8'
+  );
+
+  return {
+    mode: 'update',
+    total: result.length,
+    added: 0,
+    updated,
+    removed: 0,
+    unchanged
+  };
+}
+
+/**
+ * 仅添加模式
+ */
+async function syncAddOnly(clubs, clubsJsonPath) {
+  let existingClubs = [];
+  
+  try {
+    const data = await fs.readFile(clubsJsonPath, 'utf8');
+    existingClubs = JSON.parse(data);
+  } catch (error) {
+    console.log('ℹ️  No existing clubs.json, will create new');
+  }
+
+  const existingIds = new Set(existingClubs.map(c => c.id));
+  const result = [...existingClubs];
+  let added = 0;
+
+  for (const club of clubs) {
+    const id = club._id.toString();
+    if (!existingIds.has(id)) {
+      result.push(formatClubForJson(club));
+      added++;
+    }
+  }
+
+  await fs.writeFile(
+    clubsJsonPath,
+    JSON.stringify(result, null, 2),
+    'utf8'
+  );
+
+  return {
+    mode: 'addOnly',
+    total: result.length,
+    added,
+    updated: 0,
+    removed: 0,
+    unchanged: existingClubs.length
+  };
+}
+
+/**
+ * 主同步函数
+ */
+async function syncToJson(mode = 'replace') {
+  try {
+    const validModes = ['replace', 'merge', 'update', 'addOnly'];
+    if (!validModes.includes(mode)) {
+      throw new Error(`Invalid sync mode: ${mode}. Valid modes: ${validModes.join(', ')}`);
+    }
+
     if (mongoose.connection.readyState !== 1) {
-      console.warn('⚠️ MongoDB not connected, attempting to connect...');
+      console.warn('⚠️  MongoDB not connected, attempting to connect...');
       await mongoose.connect(process.env.MONGODB_URI);
     }
 
-    console.log('Using existing MongoDB connection');
+    console.log(`🔄 Starting sync in ${mode.toUpperCase()} mode...`);
 
-    // 获取所有社团
-    const clubs = await Club.find({})
-      .sort({ createdAt: -1 })
-      .lean();
-
+    const clubs = await Club.find({}).sort({ createdAt: -1 }).lean();
     console.log(`📊 Found ${clubs.length} clubs in MongoDB`);
 
-    // 转换为 clubs.json 格式
-    const formattedClubs = clubs.map(club => ({
-      id: club._id.toString(),
-      name: club.name,
-      school: club.school,
-      city: club.city || '',
-      province: club.province,
-      latitude: club.coordinates[1],  // [lng, lat] -> lat
-      longitude: club.coordinates[0], // [lng, lat] -> lng
-      img_name: club.logo || '',
-      short_description: club.shortDescription || '',
-      long_description: club.description || '',
-      tags: club.tags || [],
-      website: club.website || '',
-      contact: club.contact || {}
-    }));
-
-    // 写入 clubs.json
     const clubsJsonPath = path.join(__dirname, '../../public/data/clubs.json');
     
-    // 备份现有文件
     try {
       const backupPath = path.join(__dirname, '../../public/data/clubs.json.backup');
       await fs.copyFile(clubsJsonPath, backupPath);
       console.log('✓ Backup created: clubs.json.backup');
     } catch (error) {
-      console.log('ℹ No existing clubs.json to backup');
+      console.log('ℹ️  No existing clubs.json to backup');
     }
 
-    // 写入新数据
-    await fs.writeFile(
-      clubsJsonPath,
-      JSON.stringify(formattedClubs, null, 2),
-      'utf8'
-    );
+    let stats;
+    switch (mode) {
+      case 'replace':
+        stats = await syncReplace(clubs, clubsJsonPath);
+        break;
+      case 'merge':
+        stats = await syncMerge(clubs, clubsJsonPath);
+        break;
+      case 'update':
+        stats = await syncUpdate(clubs, clubsJsonPath);
+        break;
+      case 'addOnly':
+        stats = await syncAddOnly(clubs, clubsJsonPath);
+        break;
+    }
 
+    console.log('\n' + '='.repeat(60));
     console.log('✅ Successfully synced to clubs.json');
-    console.log(`📝 Total clubs: ${formattedClubs.length}`);
+    console.log(`📊 Sync Statistics (${stats.mode.toUpperCase()} mode):`);
+    console.log(`   📝 Total clubs: ${stats.total}`);
+    console.log(`   ✅ Added: ${stats.added}`);
+    console.log(`   ↻  Updated: ${stats.updated}`);
+    console.log(`   🗑️  Removed: ${stats.removed}`);
+    console.log(`   ━  Unchanged: ${stats.unchanged}`);
+    console.log('='.repeat(60));
 
-    return { success: true, count: formattedClubs.length };
+    return { 
+      success: true, 
+      ...stats
+    };
 
   } catch (error) {
     console.error('❌ Sync failed:', error);
@@ -76,15 +302,19 @@ async function syncToJson() {
   }
 }
 
-// Run sync if called directly
 if (require.main === module) {
-  syncToJson()
-    .then(() => {
-      console.log('✅ Sync complete');
+  const mode = process.argv[2] || 'replace';
+  
+  console.log(`\n📋 Available modes: replace, merge, update, addOnly`);
+  console.log(`📌 Using mode: ${mode}\n`);
+  
+  syncToJson(mode)
+    .then((result) => {
+      console.log('\n✅ Sync complete');
       process.exit(0);
     })
     .catch((error) => {
-      console.error('❌ Sync failed:', error);
+      console.error('\n❌ Sync failed:', error);
       process.exit(1);
     });
 }
