@@ -5,11 +5,29 @@ let currentProvinceFilter = null; // 当前选中的省份过滤器
 
 const AMAP_KEY = '62f275dfc2b00c300c0ea9842ed315ca';
 
+// 智能路径检测：本地开发用相对路径，线上用绝对路径
+function getResourcePath(path) {
+    // 如果是本地开发（localhost 或 127.0.0.1），用相对路径
+    // 否则（线上）用绝对路径
+    const isLocalDev = window.location.hostname === 'localhost' || 
+                       window.location.hostname === '127.0.0.1' ||
+                       window.location.hostname.startsWith('192.168') ||
+                       window.location.hostname.startsWith('[::');
+    
+    if (isLocalDev) {
+        // 本地开发：相对路径
+        return path.startsWith('/') ? '.' + path : path;
+    } else {
+        // 线上环境：绝对路径
+        return path.startsWith('/') ? path : '/' + path;
+    }
+}
+
 // 配置：资源路径
 const CONFIG = {
-    LOGO_DIR: './assets/logos/',
-    DATA_PATH: './data/clubs.json',
-    PLACEHOLDER: './assets/logos/placeholder.png',
+    LOGO_DIR: getResourcePath('/assets/logos/'),
+    DATA_PATH: getResourcePath('/data/clubs.json'),
+    PLACEHOLDER: getResourcePath('/assets/logos/placeholder.png'),
     DEFAULT_ZOOM: 5,
     CENTER: [104.1954, 35.8617],
     DETAIL_ZOOM: 13
@@ -24,7 +42,7 @@ function resolveLogoPath(imgName) {
     if (!imgName || typeof imgName !== 'string' || imgName.trim() === '') {
         return CONFIG.PLACEHOLDER;
     }
-    
+
     return `${CONFIG.LOGO_DIR}${imgName.trim()}`;
 }
 
@@ -42,6 +60,32 @@ function initMap() {
     }
 }
 
+async function validateLogos() {
+    const checks = clubsData.map(async (club) => {
+        const name = club.img_name && club.img_name.toString().trim();
+        if (!name) {
+            club.logoUrl = CONFIG.PLACEHOLDER;
+            return;
+        }
+
+        const path = `${CONFIG.LOGO_DIR}${encodeURIComponent(name)}`;
+        try {
+            const res = await fetch(path, { method: 'HEAD' });
+            if (res.ok) {
+                club.logoUrl = path;
+            } else {
+                console.warn(`[Logo] 不可访问 (${res.status}): ${name} -> ${path}`);
+                club.logoUrl = CONFIG.PLACEHOLDER;
+            }
+        } catch (err) {
+            console.warn(`[Logo] 请求失败: ${name}`, err.message);
+            club.logoUrl = CONFIG.PLACEHOLDER;
+        }
+    });
+    await Promise.all(checks);
+    console.log('[Logo] 预检完成，不可达文件已回退到占位图');
+}
+
 async function loadData() {
     try {
         const response = await fetch(CONFIG.DATA_PATH);
@@ -49,6 +93,8 @@ async function loadData() {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         clubsData = await response.json();
+        // 校验并缓存每个 logo 的最终 URL
+        await validateLogos();
         displayMarkers();
         createProvinceList();
     } catch (error) {
@@ -79,7 +125,7 @@ function displayMarkers(provinceFilter = null) {
                 }
             }
 
-            const logoUrl = resolveLogoPath(club.img_name);
+            const logoUrl = club.logoUrl || CONFIG.PLACEHOLDER;
 
             // 创建高德地图自定义图标
             const icon = new AMap.Icon({
@@ -118,8 +164,8 @@ function showClubDetails(club) {
     const content = template.content.cloneNode(true);
     
     const logoImg = content.querySelector('.club-logo');
-    logoImg.src = resolveLogoPath(club.img_name);
-    if (club.img_name) {
+    logoImg.src = club.logoUrl || CONFIG.PLACEHOLDER;
+    if (club.logoUrl) {
         logoImg.style.display = 'block';
     } else {
         logoImg.style.display = 'none';
@@ -486,8 +532,8 @@ function showProvinceClubs(province) {
         const item = template.content.cloneNode(true);
         
         const logo = item.querySelector('.province-club-logo');
-        logo.src = resolveLogoPath(club.img_name);
-        if (club.img_name) {
+        logo.src = club.logoUrl || CONFIG.PLACEHOLDER;
+        if (club.logoUrl) {
             logo.style.display = 'block';
         } else {
             logo.style.display = 'none';
