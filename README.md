@@ -19,7 +19,7 @@
   "province": "省份",
   "latitude": 纬度,
   "longitude": 经度,
-  "logo_url": "assets/logos/your-logo.png",
+  "img_name": "XXXXX.png",
   "short_description": "简短描述",
   "long_description": "详细描述",
   "external_links": [
