@@ -27,10 +27,9 @@ const linksContainer = document.getElementById('linksContainer');
 const addLinkBtn = document.getElementById('addLinkBtn');
 
 // Edit mode elements
-const modeRadios = document.querySelectorAll('input[name="submissionMode"]');
+const toggleEditMode = document.getElementById('toggleEditMode');
 const clubSearchSection = document.getElementById('clubSearchSection');
 const clubSearchInput = document.getElementById('clubSearchInput');
-const searchButton = document.getElementById('searchButton');
 const searchResults = document.getElementById('searchResults');
 const selectedClubInfo = document.getElementById('selectedClubInfo');
 
@@ -327,39 +326,62 @@ initialRemoveButtons.forEach((btn) => {
 });
 
 // Mode switching
-modeRadios.forEach(radio => {
-  radio.addEventListener('change', (e) => {
-    currentMode = e.target.value;
-    clubSearchSection.style.display = currentMode === 'edit' ? 'block' : 'none';
-    
-    if (currentMode === 'new') {
-      resetForm();
-      selectedClub = null;
-      selectedClubInfo.style.display = 'none';
-      searchResults.innerHTML = '';
-    }
-  });
+toggleEditMode.addEventListener('click', () => {
+  const isActive = toggleEditMode.classList.contains('active');
+  
+  if (isActive) {
+    // Switch to new mode
+    toggleEditMode.classList.remove('active');
+    currentMode = 'new';
+    clubSearchSection.style.display = 'none';
+    resetForm();
+    selectedClub = null;
+    selectedClubInfo.style.display = 'none';
+    searchResults.innerHTML = '';
+  } else {
+    // Switch to edit mode
+    toggleEditMode.classList.add('active');
+    currentMode = 'edit';
+    clubSearchSection.style.display = 'block';
+  }
 });
 
-// Club search
-searchButton.addEventListener('click', async () => {
-  const query = clubSearchInput.value.trim();
-  if (!query) {
-    showStatus('请输入搜索内容', 'error');
+// Club search (real-time search like homepage)
+clubSearchInput.addEventListener('input', async (e) => {
+  const query = e.target.value.toLowerCase().trim();
+  
+  if (query.length < 2) {
+    searchResults.innerHTML = '';
     return;
   }
-
+  
   try {
-    const response = await fetch(`/api/clubs?search=${encodeURIComponent(query)}`);
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      throw new Error('搜索失败');
+    // Load clubs data if not already loaded
+    if (!window.clubsData) {
+      const response = await fetch('/data/clubs.json');
+      if (!response.ok) {
+        throw new Error('Failed to load clubs data');
+      }
+      window.clubsData = await response.json();
     }
-
-    displaySearchResults(result.data || []);
+    
+    // Search clubs
+    const results = window.clubsData.filter(club => 
+      club.name.toLowerCase().includes(query) ||
+      club.school.toLowerCase().includes(query) ||
+      club.city.toLowerCase().includes(query) ||
+      (club.tags && club.tags.some(tag => tag.toLowerCase().includes(query)))
+    );
+    
+    displaySearchResults(results.slice(0, 10));
+    
   } catch (error) {
-    showStatus('搜索失败，请稍后再试', 'error');
+    console.error('Search failed:', error);
+    searchResults.innerHTML = '';
+    const p = document.createElement('p');
+    p.style.cssText = 'padding: 10px; color: #f44336;';
+    p.textContent = '搜索失败，请稍后重试';
+    searchResults.appendChild(p);
   }
 });
 
@@ -368,19 +390,22 @@ function displaySearchResults(clubs) {
   searchResults.innerHTML = '';
   
   if (clubs.length === 0) {
-    searchResults.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">未找到匹配的社团</p>';
+    const p = document.createElement('p');
+    p.style.cssText = 'padding: 10px; color: #999;';
+    p.textContent = '未找到匹配的社团';
+    searchResults.appendChild(p);
     return;
   }
 
   clubs.forEach(club => {
-    const item = document.createElement('div');
-    item.className = 'search-result-item';
-    item.innerHTML = `
-      <strong>${club.name}</strong>
-      <small>${club.school} - ${club.province}</small>
+    const div = document.createElement('div');
+    div.className = 'search-result-item';
+    div.innerHTML = `
+      <h3>${club.name}</h3>
+      <p>${club.school} - ${club.city || club.province}</p>
     `;
-    item.addEventListener('click', () => selectClub(club));
-    searchResults.appendChild(item);
+    div.addEventListener('click', () => selectClub(club));
+    searchResults.appendChild(div);
   });
 }
 

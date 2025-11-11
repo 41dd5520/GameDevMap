@@ -22,24 +22,19 @@
       
       <!-- 提交模式选择 -->
       <div class="submission-mode">
-        <label class="mode-option">
-          <input type="radio" name="submissionMode" value="new" checked>
-          <span>新增社团</span>
-        </label>
-        <label class="mode-option">
-          <input type="radio" name="submissionMode" value="edit">
-          <span>编辑现有社团</span>
-        </label>
+        <button type="button" id="toggleEditMode" class="toggle-btn">
+          <span class="toggle-text">编辑现有社团</span>
+          <span class="toggle-icon">🔍</span>
+        </button>
       </div>
 
       <!-- 搜索现有社团（编辑模式） -->
       <div id="clubSearchSection" class="club-search-section" style="display: none;">
         <h3>搜索要编辑的社团</h3>
         <div class="search-wrapper">
-          <input type="text" id="clubSearchInput" placeholder="输入社团名称或学校名称搜索...">
-          <button type="button" id="searchButton" class="btn-search">搜索</button>
+          <input type="text" id="clubSearchInput" placeholder="搜索社团、学校或标签..." aria-label="搜索社团、学校或标签">
+          <div id="searchResults" class="search-results" role="list"></div>
         </div>
-        <div id="searchResults" class="search-results"></div>
         <div id="selectedClubInfo" class="selected-club-info" style="display: none;"></div>
       </div>
 
