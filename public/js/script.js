@@ -5,6 +5,15 @@ let currentProvinceFilter = null; // 当前选中的省份过滤器
 
 const AMAP_KEY = '62f275dfc2b00c300c0ea9842ed315ca';
 
+// 处理资源路径
+function resolveAssetPath(path) {
+    if (!path) return null;
+    if (path.startsWith('assets/')) {
+        return '../' + path;
+    }
+    return path;
+}
+
 function initMap() {
     try {
         map = new AMap.Map('map', {
@@ -51,7 +60,7 @@ function displayMarkers(provinceFilter = null) {
                 }
             }
 
-            const logoUrl = club.logo_url || '../assets/logos/placeholder.png';
+            const logoUrl = resolveAssetPath(club.logo_url) || resolveAssetPath('assets/logos/placeholder.png');
 
             // 创建高德地图自定义图标
             const icon = new AMap.Icon({
@@ -91,7 +100,7 @@ function showClubDetails(club) {
     
     const logoImg = content.querySelector('.club-logo');
     if (club.logo_url) {
-        logoImg.src = club.logo_url;
+        logoImg.src = resolveAssetPath(club.logo_url);
         logoImg.style.display = 'block';
     } else {
         logoImg.style.display = 'none';
@@ -455,7 +464,7 @@ function showProvinceClubs(province) {
         
         const logo = item.querySelector('.province-club-logo');
         if (club.logo_url) {
-            logo.src = club.logo_url;
+            logo.src = resolveAssetPath(club.logo_url);
         } else {
             logo.style.display = 'none';
         }
