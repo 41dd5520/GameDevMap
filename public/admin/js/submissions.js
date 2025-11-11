@@ -360,7 +360,8 @@ function renderDetail(submission) {
     ['城市', submission.data?.city || '-'],
     ['坐标', createCoordinateText(submission.data?.coordinates)],
     ['标签', submission.data?.tags?.join(', ') || '无'],
-    ['简介', submission.data?.description || '未提供'],
+    ['短简介', submission.data?.shortDescription || '未提供'],
+    ['长简介', submission.data?.description || '未提供'],
     ['Logo', submission.data?.logo || '未上传'],
     ['网站', submission.data?.website || '未提供']
   ]);
