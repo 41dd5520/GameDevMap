@@ -54,18 +54,46 @@
    ```
 
 2. 启动本地服务器：
+   
+   **Linux/Mac:**
+   ```bash
+   # 赋予执行权限（首次运行）
+   chmod +x start-server.sh
+   
+   # 启动开发服务器
+   ./start-server.sh dev
+   
+   # 查看状态
+   ./start-server.sh status
+   ```
+
+   **Windows**
    ```bash
    # 使用 Python
    python -m http.server 8000
-   
    # 或使用 Node.js
    npx http-server
    ```
+
 
 3. 在浏览器中打开：
    ```
    http://localhost:8000
    ```
+
+### 服务器部署
+
+#### 自动部署
+```bash
+# 一键部署到 Nginx
+sudo ./start-server.sh deploy
+
+# 重载配置
+sudo ./start-server.sh reload
+
+# 查看状态
+./start-server.sh status
+```
 
 ### 使用说明
 
@@ -112,13 +140,21 @@
 
 ```
 GameDevMap/
-├── index.html          # 主HTML文件
-├── styles.css          # 样式文件
-├── script.js           # JavaScript逻辑
-├── assets/
-│   └── logos/          # 社团Logo图片
-└── data/
-   └── clubs.json      # 社团数据
+├── public/              # 前端静态文件
+│   ├── index.html       # 主HTML文件
+│   ├── css/
+│   │   └── styles.css   # 样式文件
+│   └── js/
+│       └── script.js    # JavaScript逻辑
+├── assets/              # 静态资源
+│   └── logos/           # 社团Logo图片
+├── data/                # 数据文件
+│   ├── clubs.json       # 社团数据
+│   └── clubs.schema.json # 数据格式验证
+├── server/              # 后端服务器代码
+├── specs/               # 项目规范文档
+├── package.json         # Node.js项目配置
+└── README.md            # 项目说明
 ```
 
 
