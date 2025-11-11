@@ -20,7 +20,7 @@ function initMap() {
 
 async function loadData() {
     try {
-        const response = await fetch('data/clubs.json');
+        const response = await fetch('../data/clubs.json');
         clubsData = await response.json();
         displayMarkers();
         createProvinceList();
@@ -51,7 +51,7 @@ function displayMarkers(provinceFilter = null) {
                 }
             }
 
-            const logoUrl = club.logo_url || 'assets/logos/placeholder.png';
+            const logoUrl = club.logo_url || '../assets/logos/placeholder.png';
 
             // 创建高德地图自定义图标
             const icon = new AMap.Icon({
