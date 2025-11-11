@@ -350,7 +350,7 @@ toggleEditMode.addEventListener('click', () => {
 clubSearchInput.addEventListener('input', async (e) => {
   const query = e.target.value.toLowerCase().trim();
   
-  if (query.length < 2) {
+  if (query.length < 1) {
     searchResults.innerHTML = '';
     return;
   }
