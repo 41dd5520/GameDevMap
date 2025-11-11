@@ -1,0 +1,35 @@
+{
+  "timestamp": "2025-11-11T15:30:55.997Z",
+  "ipAddress": "188.253.124.73",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+  "duplicateCheck": {
+    "passed": true,
+    "similarClubs": [],
+    "totalFound": 0
+  },
+  "submission": {
+    "submitterEmail": "wu2687180662@iCloud.com",
+    "data": {
+      "name": "游创工坊",
+      "school": "北京联合大学",
+      "province": "北京市",
+      "city": "北京",
+      "coordinates": {
+        "latitude": 39.5928,
+        "longitude": 116.2518
+      },
+      "short_description": "来自联大的初创社团",
+      "long_description": "活动就是没有活动",
+      "tags": [
+        "游戏开发",
+        "游戏设计",
+        "编程",
+        "美术"
+      ],
+      "external_links": [],
+      "submitterEmail": "wu2687180662@iCloud.com",
+      "logo": "/assets/submissions/20251111_xse1q2re_logo.png"
+    },
+    "logo": "/assets/submissions/20251111_xse1q2re_logo.png"
+  }
+}
