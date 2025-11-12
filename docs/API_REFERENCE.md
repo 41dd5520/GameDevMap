@@ -1,203 +1,553 @@
-# GameDevMap API Reference
+# GameDevMap API 参考文档
 
-## 目录
-- [概述](#概述)
-- [数据流架构](#数据流架构)
-- [认证系统](#认证系统)
-- [公开端点](#公开端点)
-- [管理端点](#管理端点)
-- [数据模型](#数据模型)
-- [错误处理](#错误处理)
-- [提交生命周期](#提交生命周期)
+**适用版本：** v1.0.0  
+**最后更新：** 2025-11-12
 
 ---
 
 ## 概述
 
-GameDevMap API 提供社团地图数据的提交、审核和查询功能。
+本文档提供 GameDevMap 系统的完整 API 参考。包含网站架构、服务端架构以及所有公开 API 端点的签名和参数说明。
 
-**Base URL**: `http://localhost:3000/api` (开发环境)  
-**生产环境**: `https://yourdomain.com/api`
-
-**技术栈**:
-- **服务端**: Node.js + Express.js
-- **数据库**: MongoDB (通过 Mongoose ODM)
-- **认证**: JWT (JSON Web Tokens)
-- **文件存储**: 本地文件系统 (`data/submissions/`)
-- **数据持久化**: MongoDB + 静态 `clubs.json` 双向同步
+GameDevMap 是一个全国高校游戏开发社团地图系统，提供社团信息的提交、审核、展示和管理功能。
 
 ---
 
-## 数据流架构
+## 目录
 
-### 整体架构图
+- [GameDevMap API 参考文档](#gamedevmap-api-参考文档)
+  - [概述](#概述)
+  - [目录](#目录)
+  - [系统架构](#系统架构)
+    - [网站架构图](#网站架构图)
+    - [服务端架构图](#服务端架构图)
+  - [认证 API](#认证-api)
+    - [`POST /api/auth/login`](#post-apiauthlogin)
+  - [文件上传 API](#文件上传-api)
+    - [`POST /api/upload/logo`](#post-apiuploadlogo)
+  - [提交管理 API](#提交管理-api)
+    - [`POST /api/submissions`](#post-apisubmissions)
+    - [`GET /api/submissions`](#get-apisubmissions)
+    - [`GET /api/submissions/:id`](#get-apisubmissionsid)
+    - [`PUT /api/submissions/:id/approve`](#put-apisubmissionsidapprove)
+    - [`PUT /api/submissions/:id/reject`](#put-apisubmissionsidreject)
+  - [社团管理 API](#社团管理-api)
+    - [`GET /api/clubs`](#get-apiclubs)
+    - [`GET /api/clubs/:id`](#get-apiclubsid)
+    - [`PUT /api/clubs/:id`](#put-apiclubsid)
+    - [`DELETE /api/clubs/:id`](#delete-apiclubsid)
+  - [数据模型](#数据模型)
+    - [`Submission` (提交)](#submission-提交)
+    - [`Club` (社团)](#club-社团)
+    - [`AdminUser` (管理员)](#adminuser-管理员)
+  - [错误处理](#错误处理)
+  - [延伸阅读](#延伸阅读)
+  - [公开端点](#公开端点)
+    - [POST /api/upload/logo](#post-apiuploadlogo-1)
+    - [POST /api/submissions](#post-apisubmissions-1)
+    - [GET /api/clubs](#get-apiclubs-1)
+    - [GET /api/clubs/:id](#get-apiclubsid-1)
+  - [管理端点](#管理端点)
+    - [GET /api/submissions](#get-apisubmissions-1)
+    - [GET /api/submissions/:id](#get-apisubmissionsid-1)
+    - [PUT /api/submissions/:id/approve](#put-apisubmissionsidapprove-1)
+    - [PUT /api/submissions/:id/reject](#put-apisubmissionsidreject-1)
+  - [数据模型](#数据模型-1)
+    - [Submission (提交)](#submission-提交-1)
+    - [Club (社团)](#club-社团-1)
+    - [AdminUser (管理员)](#adminuser-管理员-1)
+  - [错误处理](#错误处理-1)
+    - [错误响应格式](#错误响应格式)
+    - [常见错误码](#常见错误码)
+  - [提交生命周期](#提交生命周期)
+    - [状态流转图](#状态流转图)
+    - [详细步骤](#详细步骤)
+      - [1. 提交 (Submission)](#1-提交-submission)
+      - [2. 审核 (Review)](#2-审核-review)
+      - [3. 批准 (Approve)](#3-批准-approve)
+      - [4. 同步 (Sync)](#4-同步-sync)
+      - [5. 展示 (Display)](#5-展示-display)
+  - [数据同步机制](#数据同步机制)
+    - [MongoDB ↔ clubs.json 双向同步](#mongodb--clubsjson-双向同步)
+      - [JSON → MongoDB (迁移)](#json--mongodb-迁移)
+      - [MongoDB → JSON (同步)](#mongodb--json-同步)
+  - [容灾与恢复](#容灾与恢复)
+    - [临时JSON (Pending Submissions)](#临时json-pending-submissions)
+    - [备份策略](#备份策略)
+  - [性能优化](#性能优化)
+    - [频率限制 (Rate Limiting)](#频率限制-rate-limiting)
+    - [数据库索引](#数据库索引)
+  - [安全措施](#安全措施)
+    - [输入验证](#输入验证)
+    - [认证与授权](#认证与授权)
+    - [安全头](#安全头)
+    - [日志记录](#日志记录)
+  - [附录](#附录)
+    - [环境变量](#环境变量)
+    - [启动命令](#启动命令)
+    - [数据迁移](#数据迁移)
+  - [联系方式](#联系方式)
 
+---
+
+## 系统架构
+
+### 网站架构图
+
+```mermaid
+graph TB
+    A[用户浏览器] --> B[index.html<br/>地图展示页面]
+    A --> C[submit.html<br/>提交表单页面]
+    A --> D[admin/index.html<br/>管理后台页面]
+
+    B --> E[public/data/clubs.json<br/>静态社团数据]
+    B --> F[public/assets/<br/>compressedLogos/<br/>社团Logo]
+
+    C --> G[JavaScript<br/>表单验证]
+    D --> H[JavaScript<br/>管理界面]
+
+    G --> I[POST /api/submissions<br/>提交社团信息]
+    H --> J[GET /api/submissions<br/>获取待审核列表]
+    H --> K[PUT /api/submissions/:id/approve<br/>批准提交]
+    H --> L[PUT /api/submissions/:id/reject<br/>拒绝提交]
+    H --> M[GET /api/clubs<br/>获取社团列表]
+    H --> N[PUT /api/clubs/:id<br/>编辑社团]
+    H --> O[DELETE /api/clubs/:id<br/>删除社团]
+
+    I --> P[Express.js Server<br/>端口 3000]
+    J --> P
+    K --> P
+    L --> P
+    M --> P
+    N --> P
+    O --> P
 ```
-┌─────────────┐
-│   用户浏览   │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────────────────────────────┐
-│          前端 (Vanilla JavaScript)          │
-│  - 地图展示 (index.html)                    │
-│  - 提交表单 (submit.html)                   │
-│  - 管理面板 (admin/index.html)              │
-└────────┬────────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────────────┐
-│          Express.js Server (3000)           │
-│  ┌─────────────────────────────────────┐   │
-│  │  Middleware Stack                   │   │
-│  │  - helmet (安全头)                  │   │
-│  │  - cors (跨域)                      │   │
-│  │  - express.json (解析JSON)          │   │
-│  │  - morgan (日志)                    │   │
-│  │  - rateLimiter (频率限制)           │   │
-│  └─────────────────────────────────────┘   │
-│                                             │
-│  ┌─────────────────────────────────────┐   │
-│  │  Routes                             │   │
-│  │  - /api/upload (文件上传)           │   │
-│  │  - /api/submissions (提交管理)      │   │
-│  │  - /api/clubs (社团查询)            │   │
-│  │  - /api/auth (认证)                 │   │
-│  └─────────────────────────────────────┘   │
-└────────┬────────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────────────┐
-│         数据持久层 (多重保障)               │
-│  ┌─────────────────────────────────────┐   │
-│  │  MongoDB (主数据源)                 │   │
-│  │  - Submissions (待审核提交)         │   │
-│  │  - Clubs (已批准社团)               │   │
-│  │  - AdminUsers (管理员)              │   │
-│  └─────────────────────────────────────┘   │
-│  ┌─────────────────────────────────────┐   │
-│  │  文件系统 (data/)                   │   │
-│  │  - submissions/ (上传logo)          │   │
-│  │  - pending_submissions/ (临时JSON)  │   │
-│  └─────────────────────────────────────┘   │
-│  ┌─────────────────────────────────────┐   │
-│  │  静态JSON (public/data/)            │   │
-│  │  - clubs.json (前端读取)            │   │
-│  │  - clubs.json.backup (备份)         │   │
-│  └─────────────────────────────────────┘   │
-└─────────────────────────────────────────────┘
-```
 
-### 提交流程详细链路
+### 服务端架构图
 
-```
-用户填写表单 (submit.html)
-    │
-    ▼
-1. POST /api/upload/logo
-   └─> multer 中间件处理文件
-       ├─> 文件名清理与校验
-       ├─> 保存到 data/submissions/
-       └─> 返回文件路径: /assets/submissions/{filename}
-    │
-    ▼
-2. POST /api/submissions
-   ├─> validateSubmission 中间件 (Joi 校验)
-   ├─> 提取 IP、User-Agent
-   ├─> findSimilarClubs (重复检测，可降级)
-   │
-   ├─> 【关键】立即写入临时JSON (防止DB失败)
-   │   └─> data/pending_submissions/{timestamp}_{random}.json
-   │       包含: {timestamp, ipAddress, userAgent, duplicateCheck, submission}
-   │
-   ├─> Submission.save() 写入 MongoDB
-   │   └─> status: 'pending'
-   │
-   └─> 返回 201 {submissionId, status: 'pending'}
-    │
-    ▼
-管理员登录 (admin/index.html)
-    │
-    ▼
-3. POST /api/auth/login
-   └─> 验证用户名密码
-       └─> 返回 JWT token
-    │
-    ▼
-4. GET /api/submissions (带 JWT)
-   └─> 列出所有待审核提交
-    │
-    ▼
-5. PUT /api/submissions/:id/approve (管理员批准)
-   ├─> 验证 JWT
-   ├─> 检查 submission.status === 'pending'
-   │
-   ├─> 创建 Club 文档
-   │   ├─> name, school, province, city
-   │   ├─> coordinates: [longitude, latitude]
-   │   ├─> description (长描述，独立字段)
-   │   ├─> shortDescription (短描述，独立字段，不截断)
-   │   ├─> logo, tags, website, contact
-   │   └─> sourceSubmission: submission._id
-   │
-   ├─> submission.status = 'approved'
-   ├─> submission.reviewedBy = admin.username
-   │
-   ├─> 【异步】触发 syncToJson()
-   │   ├─> 读取所有 Club 文档
-   │   ├─> 转换为 clubs.json 格式
-   │   ├─> 备份旧文件 -> clubs.json.backup
-   │   └─> 写入新文件 -> public/data/clubs.json
-   │
-   └─> 返回 200 {submissionId, clubId}
-    │
-    ▼
-前端地图刷新
-    │
-    ▼
-6. GET /api/clubs (或直接读取 clubs.json)
-   └─> 返回所有社团数据（格式化为前端格式）
+```mermaid
+graph TB
+    subgraph "客户端层"
+        A[浏览器]
+    end
+
+    subgraph "API网关层"
+        B[Express.js Server<br/>端口 3000]
+        B1[helmet<br/>安全头]
+        B2[cors<br/>跨域支持]
+        B3[express.json<br/>JSON解析]
+        B4[morgan<br/>请求日志]
+        B5[rateLimiter<br/>频率限制]
+    end
+
+    subgraph "业务逻辑层"
+        C1[认证中间件<br/>JWT验证]
+        C2[验证中间件<br/>Joi校验]
+        C3[上传中间件<br/>multer文件处理]
+    end
+
+    subgraph "路由层"
+        D1[/api/auth<br/>认证路由]
+        D2[/api/upload<br/>文件上传路由]
+        D3[/api/submissions<br/>提交管理路由]
+        D4[/api/clubs<br/>社团查询路由]
+    end
+
+    subgraph "数据访问层"
+        E1[MongoDB<br/>主数据库]
+        E2[文件系统<br/>data/目录]
+        E3[静态JSON<br/>public/data/]
+    end
+
+    subgraph "数据存储"
+        F1[(Submissions<br/>待审核提交)]
+        F2[(Clubs<br/>已批准社团)]
+        F3[(AdminUsers<br/>管理员账户)]
+        F4[data/submissions/<br/>上传的Logo文件]
+        F5[data/pending_submissions/<br/>临时JSON备份]
+        F6[public/data/clubs.json<br/>前端读取数据]
+        F7[public/assets/logos/<br/>处理后Logo]
+        F8[public/assets/compressedLogos/<br/>压缩Logo]
+    end
+
+    A --> B
+    B --> B1
+    B --> B2
+    B --> B3
+    B --> B4
+    B --> B5
+
+    B --> C1
+    B --> C2
+    B --> C3
+
+    C1 --> D1
+    C2 --> D2
+    C3 --> D3
+    C1 --> D4
+
+    D1 --> E1
+    D2 --> E2
+    D3 --> E1
+    D4 --> E1
+
+    E1 --> F1
+    E1 --> F2
+    E1 --> F3
+    E2 --> F4
+    E2 --> F5
+    E3 --> F6
+    E2 --> F7
+    E2 --> F8
 ```
 
 ---
 
-## 认证系统
+## 认证 API
 
-### POST /api/auth/login
-**管理员登录**
+### `POST /api/auth/login`
 
-**请求**:
-```http
-POST /api/auth/login
-Content-Type: application/json
+**说明：**  
+管理员用户登录，验证用户名和密码，返回JWT访问令牌。
 
-{
-  "username": "admin",
-  "password": "your_password"
-}
+**参数：**
+
+| 参数名 | 类型 | 必填/可选 | 说明 | 默认值 |
+|--------|------|----------|------|--------|
+| `username` | `string` | 必填 | 管理员用户名 | - |
+| `password` | `string` | 必填 | 管理员密码 | - |
+
+**返回值：**
+- **类型：** `Object`
+- **成功情况：** 返回包含JWT令牌的用户信息
+- **失败情况：** 返回错误信息
+
+**使用示例：**
+
+```bash
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"your_password"}'
 ```
 
-**响应**:
-```json
-{
-  "success": true,
-  "message": "登录成功",
-  "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "expiresIn": "24h",
-    "user": {
-      "id": "507f1f77bcf86cd799439011",
-      "username": "admin",
-      "role": "admin"
-    }
-  }
-}
+---
+
+## 文件上传 API
+
+### `POST /api/upload/logo`
+
+**说明：**  
+上传社团Logo图片文件，进行格式验证和存储。
+
+**参数：**
+
+| 参数名 | 类型 | 必填/可选 | 说明 | 默认值 |
+|--------|------|----------|------|--------|
+| `logo` | `File` | 必填 | Logo图片文件（PNG/JPG/GIF/SVG，最大20MB） | - |
+
+**返回值：**
+- **类型：** `Object`
+- **成功情况：** 返回文件访问路径
+- **失败情况：** 返回错误信息
+
+**使用示例：**
+
+```bash
+curl -X POST http://localhost:3000/api/upload/logo \
+  -F "logo=@logo.png"
 ```
 
-**错误响应**:
+---
+
+## 提交管理 API
+
+### `POST /api/submissions`
+
+**说明：**  
+提交新的社团信息，创建待审核的提交记录。
+
+**参数：**
+
+| 参数名 | 类型 | 必填/可选 | 说明 | 默认值 |
+|--------|------|----------|------|--------|
+| `submissionType` | `string` | 可选 | 提交类型：'new'或'edit' | 'new' |
+| `name` | `string` | 必填 | 社团名称 | - |
+| `school` | `string` | 必填 | 所属学校 | - |
+| `province` | `string` | 必填 | 所在省份 | - |
+| `city` | `string` | 可选 | 所在城市 | - |
+| `coordinates` | `Object` | 必填 | 坐标对象 | - |
+| `coordinates.latitude` | `number` | 必填 | 纬度 | - |
+| `coordinates.longitude` | `number` | 必填 | 经度 | - |
+| `short_description` | `string` | 可选 | 社团简介（短） | - |
+| `long_description` | `string` | 可选 | 社团简介（长） | - |
+| `tags` | `Array<string>` | 可选 | 标签数组 | [] |
+| `external_links` | `Array<Object>` | 可选 | 外部链接数组 | [] |
+| `logo` | `string` | 可选 | Logo文件路径 | - |
+| `submitterEmail` | `string` | 必填 | 提交者邮箱 | - |
+| `editingClubId` | `string` | 可选 | 编辑模式下的社团ID | - |
+
+**返回值：**
+- **类型：** `Object`
+- **成功情况：** 返回提交ID和状态信息
+- **失败情况：** 返回验证错误信息
+
+---
+
+### `GET /api/submissions`
+
+**说明：**  
+获取提交列表，支持分页、筛选和排序（需要管理员权限）。
+
+**参数：**
+
+| 参数名 | 类型 | 必填/可选 | 说明 | 默认值 |
+|--------|------|----------|------|--------|
+| `page` | `number` | 可选 | 页码（从1开始） | 1 |
+| `limit` | `number` | 可选 | 每页数量（1-50） | 10 |
+| `status` | `string` | 可选 | 状态筛选：'pending'/'approved'/'rejected'/'all' | 'pending' |
+| `sort` | `string` | 可选 | 排序：'newest'/'oldest' | 'newest' |
+
+**返回值：**
+- **类型：** `Object`
+- **成功情况：** 返回分页的提交列表
+- **失败情况：** 返回错误信息
+
+---
+
+### `GET /api/submissions/:id`
+
+**说明：**  
+获取单个提交的详细信息（需要管理员权限）。
+
+**参数：**
+
+| 参数名 | 类型 | 必填/可选 | 说明 | 默认值 |
+|--------|------|----------|------|--------|
+| `id` | `string` | 必填 | 提交记录ID | - |
+
+**返回值：**
+- **类型：** `Object`
+- **成功情况：** 返回提交详细信息
+- **失败情况：** 返回错误信息
+
+---
+
+### `PUT /api/submissions/:id/approve`
+
+**说明：**  
+批准提交，将其转换为正式社团记录（需要管理员权限）。
+
+**参数：**
+
+| 参数名 | 类型 | 必填/可选 | 说明 | 默认值 |
+|--------|------|----------|------|--------|
+| `id` | `string` | 必填 | 提交记录ID | - |
+
+**返回值：**
+- **类型：** `Object`
+- **成功情况：** 返回提交ID和新创建的社团ID
+- **失败情况：** 返回错误信息
+
+---
+
+### `PUT /api/submissions/:id/reject`
+
+**说明：**  
+拒绝提交，标记为已拒绝状态（需要管理员权限）。
+
+**参数：**
+
+| 参数名 | 类型 | 必填/可选 | 说明 | 默认值 |
+|--------|------|----------|------|--------|
+| `id` | `string` | 必填 | 提交记录ID | - |
+| `rejectionReason` | `string` | 必填 | 拒绝原因 | - |
+
+**返回值：**
+- **类型：** `Object`
+- **成功情况：** 返回操作成功信息
+- **失败情况：** 返回错误信息
+
+---
+
+## 社团管理 API
+
+### `GET /api/clubs`
+
+**说明：**  
+获取所有已批准社团的列表，支持搜索筛选。
+
+**参数：**
+
+| 参数名 | 类型 | 必填/可选 | 说明 | 默认值 |
+|--------|------|----------|------|--------|
+| `search` | `string` | 可选 | 搜索关键词（名称、学校、省份等） | - |
+
+**返回值：**
+- **类型：** `Array`
+- **成功情况：** 返回社团列表数组
+- **失败情况：** 返回错误信息
+
+---
+
+### `GET /api/clubs/:id`
+
+**说明：**  
+获取单个社团的详细信息。
+
+**参数：**
+
+| 参数名 | 类型 | 必填/可选 | 说明 | 默认值 |
+|--------|------|----------|------|--------|
+| `id` | `string` | 必填 | 社团ID | - |
+
+**返回值：**
+- **类型：** `Object`
+- **成功情况：** 返回社团详细信息
+- **失败情况：** 返回错误信息
+
+---
+
+### `PUT /api/clubs/:id`
+
+**说明：**  
+编辑社团信息（需要管理员权限）。
+
+**参数：**
+
+| 参数名 | 类型 | 必填/可选 | 说明 | 默认值 |
+|--------|------|----------|------|--------|
+| `id` | `string` | 必填 | 社团ID | - |
+| `name` | `string` | 可选 | 社团名称 | - |
+| `school` | `string` | 可选 | 所属学校 | - |
+| `province` | `string` | 可选 | 所在省份 | - |
+| `city` | `string` | 可选 | 所在城市 | - |
+| `description` | `string` | 可选 | 详细介绍 | - |
+| `shortDescription` | `string` | 可选 | 简介 | - |
+| `tags` | `Array<string>` | 可选 | 标签数组 | - |
+| `website` | `string` | 可选 | 官方网站 | - |
+| `contact` | `Object` | 可选 | 联系方式对象 | - |
+| `coordinates` | `Array<number>` | 可选 | 坐标数组 [经度,纬度] | - |
+
+**返回值：**
+- **类型：** `Object`
+- **成功情况：** 返回更新后的社团信息
+- **失败情况：** 返回错误信息
+
+---
+
+### `DELETE /api/clubs/:id`
+
+**说明：**  
+删除社团记录及其相关Logo文件（需要管理员权限）。
+
+**参数：**
+
+| 参数名 | 类型 | 必填/可选 | 说明 | 默认值 |
+|--------|------|----------|------|--------|
+| `id` | `string` | 必填 | 社团ID | - |
+
+**返回值：**
+- **类型：** `Object`
+- **成功情况：** 返回删除成功信息
+- **失败情况：** 返回错误信息
+
+---
+
+## 数据模型
+
+### `Submission` (提交)
+
+**说明：**  
+表示用户提交的社团信息记录，等待管理员审核。
+
+**字段：**
+
+| 字段名 | 类型 | 必填/可选 | 说明 |
+|--------|------|----------|------|
+| `submissionType` | `string` | 必填 | 提交类型：'new'或'edit' |
+| `editingClubId` | `string` | 可选 | 编辑模式下的原社团ID |
+| `status` | `string` | 必填 | 状态：'pending'/'approved'/'rejected' |
+| `data` | `Object` | 必填 | 社团数据对象 |
+| `submitterEmail` | `string` | 必填 | 提交者邮箱 |
+| `submittedAt` | `Date` | 自动 | 提交时间 |
+| `reviewedAt` | `Date` | 可选 | 审核时间 |
+| `reviewedBy` | `string` | 可选 | 审核管理员 |
+| `rejectionReason` | `string` | 可选 | 拒绝原因 |
+
+---
+
+### `Club` (社团)
+
+**说明：**  
+表示已批准的社团记录，用于前端地图展示。
+
+**字段：**
+
+| 字段名 | 类型 | 必填/可选 | 说明 |
+|--------|------|----------|------|
+| `name` | `string` | 必填 | 社团名称 |
+| `school` | `string` | 必填 | 所属学校 |
+| `province` | `string` | 必填 | 所在省份 |
+| `city` | `string` | 可选 | 所在城市 |
+| `coordinates` | `Array<number>` | 必填 | 坐标 [经度,纬度] |
+| `description` | `string` | 可选 | 详细介绍 |
+| `shortDescription` | `string` | 可选 | 简介 |
+| `tags` | `Array<string>` | 可选 | 标签数组 |
+| `logo` | `string` | 可选 | Logo文件名 |
+| `website` | `string` | 可选 | 官方网站 |
+| `contact` | `Object` | 可选 | 联系方式 |
+| `createdAt` | `Date` | 自动 | 创建时间 |
+| `updatedAt` | `Date` | 自动 | 更新时间 |
+
+---
+
+### `AdminUser` (管理员)
+
+**说明：**  
+系统管理员账户信息。
+
+**字段：**
+
+| 字段名 | 类型 | 必填/可选 | 说明 |
+|--------|------|----------|------|
+| `username` | `string` | 必填 | 用户名 |
+| `password` | `string` | 必填 | 密码哈希 |
+| `role` | `string` | 必填 | 角色：'admin' |
+| `createdAt` | `Date` | 自动 | 创建时间 |
+
+---
+
+## 错误处理
+
+API 错误响应统一格式：
+
 ```json
 {
   "success": false,
+  "error": "ERROR_CODE",
+  "message": "错误描述信息"
+}
+```
+
+**常见错误码：**
+
+| 错误码 | HTTP状态码 | 说明 |
+|--------|-----------|------|
+| `INVALID_ID` | 400 | ID格式不正确 |
+| `NOT_FOUND` | 404 | 资源不存在 |
+| `INVALID_STATUS` | 409 | 状态不允许操作 |
+| `MISSING_REASON` | 400 | 缺少必要参数 |
+| `VALIDATION_ERROR` | 400 | 数据验证失败 |
+| `SERVER_ERROR` | 500 | 服务器内部错误 |
+| `UNAUTHORIZED` | 401 | 未授权访问 |
+
+---
+
+## 延伸阅读
+
+- [数据同步机制](./DATA_SYNC.md) - MongoDB与JSON的双向同步
+- [服务器配置](./CONFIG.md) - 服务器配置和部署指南
+- [前端开发指南](./GUIDE.md) - 前端开发和使用说明
   "error": "INVALID_CREDENTIALS",
   "message": "用户名或密码错误"
 }
