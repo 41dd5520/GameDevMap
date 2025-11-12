@@ -15,6 +15,7 @@
     "sync:update": "node server/scripts/syncToJson.js update",
     "sync:addOnly": "node server/scripts/syncToJson.js addOnly",
     "compress:images": "python scripts/compress_images.py",
+    "cleanup:logos": "node server/scripts/cleanupOrphanedLogos.js",
     "cache:start": "node server/cache-server.js",
     "pre-cache": "node server/pre-cache.js",
     "cache:clear": "curl -X DELETE http://localhost:3000/api/cache/clear",

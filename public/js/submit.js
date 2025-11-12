@@ -503,7 +503,6 @@ function showEditForm(field) {
   editFormTitle.textContent = getFieldDisplayName(field);
   editFormContent.innerHTML = generateEditForm(field);
   editForm.style.display = 'block';
-  editModeInterface.style.display = 'none';
 }
 
 // Get display name for field
@@ -697,7 +696,6 @@ function parseContactInfo(contactStr) {
 // Handle cancel edit
 cancelEdit.addEventListener('click', () => {
   editForm.style.display = 'none';
-  editModeInterface.style.display = 'block';
   currentEditingField = null;
 });
 
@@ -717,7 +715,6 @@ saveEdit.addEventListener('click', async () => {
     
     // Hide edit form
     editForm.style.display = 'none';
-    editModeInterface.style.display = 'block';
     currentEditingField = null;
     
     // Show success message

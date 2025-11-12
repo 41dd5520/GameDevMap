@@ -152,6 +152,72 @@ router.get('/:id', async (req, res) => {
 });
 
 /**
+ * PUT /api/clubs/:id
+ * 管理员端点 - 编辑社团信息
+ * 
+ * @param {string} id - 社团ID
+ * @body {Object} 更新数据（支持：name, school, province, city, coordinates, description, shortDescription, tags, website, contact）
+ * @returns {Object} 更新结果
+ */
+router.put('/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body || {};
+
+    const club = await Club.findById(id);
+
+    if (!club) {
+      return res.status(404).json({
+        success: false,
+        error: 'NOT_FOUND',
+        message: '未找到该社团'
+      });
+    }
+
+    // 允许更新的字段
+    const allowedFields = [
+      'name', 'school', 'province', 'city', 
+      'description', 'shortDescription', 
+      'tags', 'website', 'contact', 'coordinates'
+    ];
+
+    // 更新允许的字段
+    allowedFields.forEach(field => {
+      if (field in updateData && updateData[field] !== undefined) {
+        club[field] = updateData[field];
+      }
+    });
+
+    await club.save();
+
+    console.log(`✏️ Updated club: ${club.name} (${club.school}) by ${req.user.username}`);
+
+    // 自动同步到 clubs.json
+    syncToJson().catch(err => {
+      console.error('⚠️  Failed to sync clubs.json after update:', err);
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: '社团已更新',
+      data: {
+        id: club._id.toString(),
+        name: club.name,
+        school: club.school,
+        updatedAt: club.updatedAt
+      }
+    });
+  } catch (error) {
+    console.error('❌ Update club failed:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'SERVER_ERROR',
+      message: '更新社团失败'
+    });
+  }
+});
+
+/**
  * DELETE /api/clubs/:id
  * 管理员端点 - 删除社团
  * 
