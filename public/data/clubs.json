@@ -192,4 +192,23 @@
     "website": "",
     "contact": {}
   }
+  {
+   "id": "FoshanUniversityDesignAssociation",
+    "name": "设计协会",
+    "school": "佛山大学",
+    "city": "佛山",
+    "province": "广东省",
+    "latitude": 23.000693,
+    "longitude": 113.058520,
+    "img_name": "FoshanUniversityDesignAssociation.png",
+    "short_description": "设计协会",
+    "long_description": "佛山大学唯一的游戏开发社团，致力于集合所有热爱游戏与开发游戏的伙伴们，一起来做3A大作！。",
+    "tags": [
+      "正式社团",
+      "游戏开发",
+      "UE",
+      "Gamejam"
+    ],
+    "website": "",
+    "contact": {}
 ]
